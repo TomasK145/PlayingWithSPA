@@ -5,7 +5,15 @@ function createShoppingList() {
   currentList.items = new Array();
 
   //web service call
-  showShoppingList();
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: "api/ShoppingList/",
+        data: currentList,
+        success: function (result) {
+            showShoppingList();
+        }
+    });
 }
 
 function showShoppingList() {
@@ -24,12 +32,21 @@ function showShoppingList() {
 }
 
 function addItem() {
-  var newItem = {};
-  newItem.name = $("#newItemName").val();
-  currentList.items.push(newItem);
+    var newItem = {};
+    newItem.name = $("#newItemName").val();
+    newItem.shoppingListId = currentList.id;
 
-  drawItems();
-  $("#newItemName").val("");
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: "api/Item/",
+        data: newItem,
+        success: function (result) {
+            currentList = result;
+            drawItems();
+            $("#newItemName").val("");
+        }
+    });    
 }
 
 function drawItems() {
@@ -41,36 +58,68 @@ function drawItems() {
       .html(currentItem.name)
       .attr("id", "item_" + i);
     var deleteBtn = $(
-      "<button onclick='deleteItem(" + i + ")'>D</button>"
+        "<button onclick='deleteItem(" + currentItem.id + ")'>D</button>"
     ).appendTo(li);
-    var checkBtn = $(
-      "<button onclick='checkItem(" + i + ")'>C</button>"
-    ).appendTo(li);
+      var checkBtn = $(
+       "<button onclick='checkItem(" + currentItem.id + ")'>C</button>"
+      ).appendTo(li);
+
+      if (currentItem.checked) {
+          li.addClass('checked');
+      }
+
     li.appendTo(list);
   }
 }
 
-function deleteItem(index) {
-  currentList.items.splice(index, 1);
-  drawItems();
+function deleteItem(itemId) {
+    $.ajax({
+        type: "DELETE",
+        dataType: "json",
+        url: "api/Item/" + itemId,
+        success: function (result) {
+            currentList = result;
+            drawItems();
+        }
+    });  
 }
 
-function checkItem(index) {
-  $("#item_" + index).toggleClass("checked");
+function checkItem(itemId) {
+    var changedItem = {};
+    for (var i = 0; i < currentList.items.length; i++) {
+        if (currentList.items[i].id == itemId) {
+            changedItem = currentList.items[i];
+        }
+    }
+
+    changedItem.checked = !changedItem.checked;
+
+    $.ajax({
+        type: "PUT",
+        dataType: "json",
+        url: "api/Item/" + itemId,
+        data: changedItem,               //posileanie data vramci volania
+        success: function (result) {
+            currentList = result;
+            drawItems();
+        }
+    });    
 }
 
 function getShoppingListById(id) {
-  console.info(id);
-
-  currentList.name = "Mock Shopping List";
-  currentList.items = [
-    { name: "Milk" },
-    { name: "Cornflakes" },
-    { name: "Strawberries" }
-  ];
-
-  showShoppingList();
-  drawItems();
+    $.ajax({
+        type: "GET",
+        dataType: "json",
+        url: "api/ShoppingList/" + id,
+        success: function (result) {
+            currentList = result; //potrebne nastavit Web API aby json z controllera bol s malymi pismenami (pozri WebApiConfig)
+            showShoppingList();
+            drawItems();
+        },
+        error: function () {
+            console.error("Something bad happended!");
+        }
+    });
 }
 
 $(document).ready(function() {
