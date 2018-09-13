@@ -8,9 +8,10 @@ function createShoppingList() {
     $.ajax({
         type: "POST",
         dataType: "json",
-        url: "api/ShoppingList/",
+        url: "api/ShoppingListsEF/",
         data: currentList,
         success: function (result) {
+            currentList = result;
             showShoppingList();
         }
     });
@@ -110,7 +111,7 @@ function getShoppingListById(id) {
     $.ajax({
         type: "GET",
         dataType: "json",
-        url: "api/ShoppingList/" + id,
+        url: "api/ShoppingListsEF/" + id,
         success: function (result) {
             currentList = result; //potrebne nastavit Web API aby json z controllera bol s malymi pismenami (pozri WebApiConfig)
             showShoppingList();
