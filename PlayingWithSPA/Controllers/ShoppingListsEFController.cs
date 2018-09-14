@@ -9,12 +9,26 @@ using System.Net.Http;
 using System.Web.Http;
 using System.Web.Http.Description;
 using PlayingWithSPA.Models;
+using Serilog;
+using Serilog.Sinks.MSSqlServer;
 
 namespace PlayingWithSPA.Controllers
 {
     public class ShoppingListsEFController : ApiController
     {
         private PlayingWithSPAContext db = new PlayingWithSPAContext();
+        private Serilog.Core.Logger logger;
+
+        public ShoppingListsEFController()
+        {
+            var connectionString = @"Data Source=(localdb)\MSSQLLocalDB; Initial Catalog=PlayingWithSPAContext-20180912152747; Integrated Security=True; MultipleActiveResultSets=True; AttachDbFilename=|DataDirectory|PlayingWithSPAContext-20180912152747.mdf";  // or the name of a connection string in the app config
+            var tableName = "Logs";
+            var columnOptions = new ColumnOptions();  // optional
+
+            logger = new LoggerConfiguration()
+                            .WriteTo.MSSqlServer(connectionString, tableName, columnOptions: columnOptions)
+                            .CreateLogger();
+        }
 
         // GET: api/ShoppingListsEF
         public IQueryable<ShoppingList> GetShoppingLists()
@@ -26,6 +40,7 @@ namespace PlayingWithSPA.Controllers
         [ResponseType(typeof(ShoppingList))]
         public IHttpActionResult GetShoppingList(int id)
         {
+            logger.Information("ShoppingListsEFController.GetShoppingList called");
             ShoppingList shoppingList = db.ShoppingLists.Where(s => s.Id == id).Include(s => s.Items).FirstOrDefault();
             if (shoppingList == null)
             {
