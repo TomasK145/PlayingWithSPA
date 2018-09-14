@@ -13,6 +13,7 @@ function createShoppingList() {
         success: function (result) {
             currentList = result;
             showShoppingList();
+            history.pushState({ id: result.id }, result.name, "?id=" + result.id); //pridana historia browsovania --> data: object s id listu, title: nazov listu, url: 
         }
     });
 }
@@ -24,7 +25,9 @@ function showShoppingList() {
   $("#createListDiv").hide();
   $("#shoppingListDiv").show();
 
-  $("#newItemName").focus();
+    $("#newItemName").val("");
+    $("#newItemName").focus();
+    $("#newItemName").unbind("keyup");
   $("#newItemName").keyup(function(event) {
     if (event.keyCode == 13) {
       addItem();
@@ -40,7 +43,7 @@ function addItem() {
     $.ajax({
         type: "POST",
         dataType: "json",
-        url: "api/Item/",
+        url: "api/ItemsEF/",
         data: newItem,
         success: function (result) {
             currentList = result;
@@ -77,7 +80,7 @@ function deleteItem(itemId) {
     $.ajax({
         type: "DELETE",
         dataType: "json",
-        url: "api/Item/" + itemId,
+        url: "api/ItemsEF/" + itemId,
         success: function (result) {
             currentList = result;
             drawItems();
@@ -98,10 +101,10 @@ function checkItem(itemId) {
     $.ajax({
         type: "PUT",
         dataType: "json",
-        url: "api/Item/" + itemId,
+        url: "api/ItemsEF/" + itemId,
         data: changedItem,               //posileanie data vramci volania
         success: function (result) {
-            currentList = result;
+            changedItem: result;
             drawItems();
         }
     });    
@@ -123,17 +126,36 @@ function getShoppingListById(id) {
     });
 }
 
-$(document).ready(function() {
-  $("#shoppingListName").focus();
-  $("#shoppingListName").keyup(function(event) {
-    if (event.keyCode == 13) {
-      createShoppingList();
-    }
-  });
+function hideShoppingList() {
+    $("#createListDiv").show();
+    $("#shoppingListDiv").hide();
+
+    $("#shoppingListName").val("");
+    $("#shoppingListName").focus();
+    $("#shoppingListName").unbind("keyup");
+    $("#shoppingListName").keyup(function (event) {
+        if (event.keyCode === 13) {
+            createShoppingList();
+        }
+    });
+}
+
+$(document).ready(function () {
+    hideShoppingList(); 
 
   var pageUrl = window.location.href;
   var idIndex = pageUrl.indexOf("?id=");
-  if (idIndex != -1) {
+  if (idIndex !== -1) {
     getShoppingListById(pageUrl.substring(idIndex + 4));
-  }
+    }
+
+    window.onpopstate = function (event) {//kedykolvek bol najdeny stav v historii browsovania potom je tento event spusteny 
+        if (event.state === null) {
+            //hide shopping list
+            hideShoppingList();
+        } else {
+            //nacitanie shopping listu z historie browsovania podla ID
+            getShoppingListById(event.state.id);
+        }
+    };
 });
